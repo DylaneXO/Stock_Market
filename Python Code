@@ -1,0 +1,51 @@
+import pandas as pd
+file = 'World Stock Market.xlsx'
+df = pd.read_excel(file) #importing the .xslx file
+#print(df.isna().sum()) #identifies null values
+print(df.head)
+df = df.dropna(axis=1) #removes columns with null values
+#print(df.info())
+#print(df.duplicated())
+df.drop_duplicates(inplace = True)
+# Convert 'Date' column to datetime
+import matplotlib.pyplot as plt
+
+# Ensure 'Date' column is in datetime format
+df['Date'] = pd.to_datetime(df['Date'])
+# Ensure 'Date' column is in datetime format and remove timezone
+df['Date'] = pd.to_datetime(df['Date'],utc=True).dt.tz_localize(None)
+
+# Convert filter values to datetime explicitly
+start_date = pd.to_datetime('2023-09-01')
+end_date = pd.to_datetime('2023-09-30')
+
+September = df.loc[(df['Date'] >= start_date) & (df['Date'] <= end_date)].copy()
+# Ensure continuous date range, Convert DatetimeIndex to DataFrame
+#full_dates_df = pd.DataFrame({'Date': pd.date_range(start=start_date, end=end_date)})
+#September = pd.merge(full_dates_df, September, on='Date', how='left')
+
+September[['Open', 'Close']] = September[['Open', 'Close']].fillna(method='ffill').fillna(method='bfill')
+
+#Create the moving average
+September['Open_MA'] = September['Open'].rolling(window=7).mean()
+September['Close_MA'] = September['Close'].rolling(window=7).mean()
+
+# Plot
+plt.figure(figsize=(18, 6))
+plt.plot(September['Date'], September['Open_MA'], label='Open Price (7-day MA)', linestyle='dashed', alpha=0.7)
+plt.plot(September['Date'], September['Close_MA'], label='Close Price (7-day MA)', linewidth=2)
+
+# Formatting
+plt.xlabel('Date')
+plt.ylabel('Stock Price')
+plt.title('Stock Open & Close Prices in 2023 (Smoothed)')
+plt.legend()
+plt.xticks(rotation=45)  # Rotate x-axis labels for readability
+plt.grid(True)
+plt.xticks(September['Date'][::5])  # Show only every 5th date
+plt.show()
+
+print(September.head())  # Check if any data is present
+print(September.isna().sum())  # Count missing values
+
+print(df.info())
